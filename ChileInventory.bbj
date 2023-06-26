@@ -1,0 +1,93 @@
+style! = "
+: body,html {overflow: hidden}
+:
+: .bbj-toolbar {
+:    display: flex;
+:    align-items: center;
+:    gap: var(--bbj-space-m);
+:    padding: 0 var(--bbj-space-m);
+: }
+:
+: .bbj-logo {
+:    display: flex;
+:    align-items: center;
+:    justify-content: center;
+:    padding: var(--bbj-space-m) 0;
+:    margin-bottom: var(--bbj-space-m);
+:    border-bottom: thin solid var(--bbj-color-default)
+: }
+:
+: .bbj-logo img {
+:    max-width: 100px;
+: }
+:"
+
+use ::BBjAppLayout/BBjAppLayout.bbj::BBjAppLayout
+
+web! = BBjAPI().getWebManager()
+rem The app should include a viewport meta tag which contains `viewport-fit=cover`, like the following.
+rem This causes the viewport to be scaled to fill the device display.
+web!.setMeta("viewport", "width=device-width, initial-scale=1.0, viewport-fit=cover, user-scalable=no")
+web!.injectStyle(style!, 0)
+
+sysgui! =  BBjAPI().openSysGui("X0")
+imageManager! = sysgui!.getImageManager()
+
+wnd! = sysgui!.addWindow("BBjAppLayout", $01001000$)
+wnd!.setCallback(BBjAPI.ON_CLOSE,"eoj")
+
+app! = new BBjAppLayout(wnd!)
+
+rem Header
+rem ==================
+header! = app!.getHeader()
+toolbar! = header!.addChildWindow("", $00108800$, sysgui!.getAvailableContext())
+toolbar!.addStyle("bbj-toolbar")
+toolbar!.addStaticText("<html><bbj-icon-button name='menu-2' data-drawer-toggle></bbj-icon-button></html>")
+toolbar!.addStaticText("<html><h3>ChileCompany Inventory App</h3></html>")
+
+rem Drawer
+rem ==================
+drawer! = app!.getDrawer()
+drawer!.addStyle("bbj-drawer")
+
+logo! = drawer!.addImageCtrl(imageManager!.loadImageFromFile("BBjAppLayout/demo/assets/logo.png"))
+logo!.addStyle("bbj-logo")
+
+drawerMenu! = drawer!.addTabCtrl()
+drawerMenu!.setCallback(drawerMenu!.ON_TAB_SELECT,"onPageChanged")
+drawerMenu!.setAttribute("nobody","true")
+drawerMenu!.setAttribute("borderless","true")
+drawerMenu!.setAttribute("placement","left")
+
+drawerMenu!.addTab("<bbj-icon name='box'></bbj-icon>            Inventory"     , -1)
+drawerMenu!.addTab("<bbj-icon name='shopping-cart'></bbj-icon>  Order Picking"       , -1)
+
+rem Content
+rem ==================
+content! = app!.getContent()
+
+
+contentTabs! = content!.addTabCtrl()
+contentTabs!.setAttribute("placement","hidden")
+
+inventoryPanel! = content!.addChildWindow(1001,"",$00110800$,1001)
+contentTabs!.addTab("",1001)
+new ::InventoryCountingPanel.bbj::InventoryCountingPanel(inventoryPanel!)
+
+orderPickPanel! = content!.addChildWindow(1002,"",$00110800$,1002)
+orderPickPanel!.addStaticText("Order Picking")
+contentTabs!.addTab("",1002)
+
+
+inventoryPanel!.focus()
+
+process_events
+
+onPageChanged:
+    event! = sysgui!.getLastEvent() 
+    contentTabs!.setSelectedIndex(event!.getIndex())
+return
+
+eoj:
+release

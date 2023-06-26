@@ -1,0 +1,135 @@
+
+class public InventoryCountingPanel
+
+    field private BBjChildWindow panel!
+
+    field private BBjInputE    itemNo!
+    field private BBjCEdit      itemData!
+    field private BBjInputN     qtyCounted!
+    field private BBjButton     save!
+    
+    field private BBjNumber     sqlchan
+    
+    field private BBjString     currItem$
+
+    rem pass child window for this panel
+    method public InventoryCountingPanel(BBjChildWindow wnd!)
+        #panel! = wnd!
+        
+        #panel!.setPanelStyle("display","flex")
+        #panel!.setPanelStyle("flex-direction","column")
+        #panel!.setPanelStyle("gap","20px")
+        #panel!.setPanelStyle("max-width","500px")
+
+        #panel!.addStaticText("<html><h1>Inventory Counting</h1>")
+        
+        #itemNo!     = #panel!.addInputE("")
+        #itemNo!.setAttribute("label","Item#")
+        
+        #itemNo!.setCallback(BBjAPI.ON_INPUT_KEYPRESS,#this!,"onItemNo")
+        #itemNo!.setCallback(BBjAPI.ON_GAINED_FOCUS,#this!,"onItemNoFocus")
+        
+        #itemData!   = #panel!.addCEdit("")
+        #itemData!.setAttribute("label","Item Information")
+        #itemData!.setStyle("height","120px")
+       
+        
+        #qtyCounted! = #panel!.addInputN()
+        #qtyCounted!.setAttribute("label","Qty Counted")
+        
+        #qtyCounted!.setCallback(BBjAPI.ON_INPUT_KEYPRESS,#this!,"onQtyCounted")
+        
+        
+        #save!       = #panel!.addButton("Save")
+        #save!.setAttribute("expanse","xl")
+        #save!.setAttribute("theme","success")
+        
+        #save!.setCallback(BBjAPI.ON_BUTTON_PUSH,#this!,"onSave")
+        
+        #sqlchan = SQLUNT()
+        sqlopen (#sqlchan)"CDStore"
+        
+        #showData(0)
+        
+
+    methodend
+    
+    rem disable default constructor
+    method private InventoryCountingPanel()
+    methodend
+
+    method public void focus()
+        #itemNo!.focus()
+    methodend
+    
+    method public void onItemNo(BBjInputKeypressEvent ev!)
+        
+        if ev!.getKeyCode() = 13 then
+            
+            inp$ = #itemNo!.getText()
+            sql$="SELECT * FROM CDINVENTORY WHERE CDNUMBER=?"
+            
+            sqlprep (#sqlchan)sql$
+            sqlexec (#sqlchan)inp$
+            
+            dim rec$:sqltmpl(#sqlchan)
+            rec$=sqlfetch(#sqlchan,err=no_data)
+            #itemData!.setText(rec.TITLE$+$0d$+rec.ARTIST$+$0d$+"On Hand: "+rec.ONHAND$)
+            
+            #qtyCounted!.focus()
+            #currItem$ = rec.CDNUMBER$
+            
+            #showData(1)
+        fi    
+        
+        methodret
+        
+        no_data:
+                    
+            #itemNo!.focus()
+            #itemNo!.selectAll()
+            #itemNo!.setAttribute("invalid","true") 
+            #itemNo!.setAttribute("invalid-message","Item not found.")
+            #itemNo!.setAttribute("validation-style","inline") 
+            
+
+    methodend
+    
+   method public void onQtyCounted(BBjInputKeypressEvent ev!)
+        if ev!.getKeyCode() = 13 then
+            #onSave(null())
+        fi
+   methodend
+
+    
+    method public void onSave(BBjButtonPushEvent ev!)
+    
+        qty! = #qtyCounted!.getValue()
+        item! = #currItem$
+        
+        rem save the counted quantity for the item
+        sql$="UPDATE CDINVENTORY SET ONHAND=? WHERE CDNUMBER=?"
+        sqlprep (#sqlchan) sql$
+        sqlexec (#sqlchan) qty!,item!
+        
+        #itemNo!.setText("")
+        #itemData!.setText("")
+        #qtyCounted!.setValue(0)
+        
+        #showData(0)
+        #itemNo!.focus()
+        
+    methodend
+    
+    method private void showData(Boolean fShow!)
+        #save!.setVisible(fShow!)
+        #qtyCounted!.setVisible(fShow!)
+        #itemData!.setVisible(fShow!)
+    methodend
+    
+    method public void onItemNoFocus(BBjGainedFocusEvent ev!)
+        #showData(0)
+        
+    methodend
+
+classend
