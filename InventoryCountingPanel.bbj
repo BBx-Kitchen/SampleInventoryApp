@@ -1,4 +1,3 @@
-
 class public InventoryCountingPanel
 
     field private BBjChildWindow panel!
@@ -25,6 +24,9 @@ class public InventoryCountingPanel
         
         #itemNo!     = #panel!.addInputE("")
         #itemNo!.setAttribute("label","Item#")
+        #itemNo!.setAttribute("invalid-message","Item not found.")
+        #itemNo!.setAttribute("validation-style","inline") 
+        #itemNo!.setAttribute("auto-validate","false") 
         
         #itemNo!.setCallback(BBjAPI.ON_INPUT_KEYPRESS,#this!,"onItemNo")
         #itemNo!.setCallback(BBjAPI.ON_GAINED_FOCUS,#this!,"onItemNoFocus")
@@ -79,7 +81,9 @@ class public InventoryCountingPanel
             #qtyCounted!.focus()
             #currItem$ = rec.CDNUMBER$
             
+
             #showData(1)
+            #itemNo!.setAttribute("invalid","false") 
         fi    
         
         methodret
@@ -89,8 +93,6 @@ class public InventoryCountingPanel
             #itemNo!.focus()
             #itemNo!.selectAll()
             #itemNo!.setAttribute("invalid","true") 
-            #itemNo!.setAttribute("invalid-message","Item not found.")
-            #itemNo!.setAttribute("validation-style","inline") 
             
 
     methodend
